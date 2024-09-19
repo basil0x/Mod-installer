@@ -3,39 +3,35 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text.Json;
-using System.Reflection;
 
 class Program
 {
     public class FileInfo
     {
-        public required string Url { get; set; }
-        public required string FileName { get; set; }
-    }
-    public class FileList
-    {
-        public required FileInfo[] Files { get; set; }
+        public string Url { get; set; }
+        public string FileName { get; set; }
     }
 
     static async Task Main()
     {
-        string jsonUrl = "https://example.com/files.json";
+        string jsonUrl = "https://github.com/Vuk-Dr/Mod-installer/raw/master/files.json";
         string jsonPath = AppDomain.CurrentDomain.BaseDirectory + "files.json";
-        await DownloadFileWithProgressAsync(jsonUrl, jsonPath);
-
+        await DownloadFileWithProgressAsync(jsonUrl, jsonPath);//OK
+        
         bool? success = true;
         Console.WriteLine("Unesi putanju do Minecraft root foldera: ");
         string? UserPath = Console.ReadLine();
 
-        FileList fileList = await LoadFilesFromJsonAsync(jsonPath);
+        string jsonString = File.ReadAllText(jsonPath);
+        List<FileInfo> files = JsonSerializer.Deserialize<List<FileInfo>>(jsonString);
 
-        foreach (var file in fileList.Files) {
+        foreach (var file in files) {
 
             string filePath = Path.Combine(UserPath + "/mods", file.FileName);
             if (Directory.Exists(UserPath + "/versions"))
             {
                 if (!Directory.Exists(UserPath + "/mods")) Directory.CreateDirectory(UserPath + "/mods");
-                await DownloadFileWithProgressAsync(file.Url, filePath);
+                await DownloadFileWithProgressAsync(file.Url, filePath + file.FileName);
             }
             else
             {
@@ -52,31 +48,7 @@ class Program
         Console.ReadLine();
     }
 
-    static async Task<string> ReadEmbeddedJsonAsync(string fileName)
-    {
-        var assembly = Assembly.GetExecutingAssembly();
-        var resourceName = assembly.GetManifestResourceNames()
-                                   .FirstOrDefault(name => name.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
 
-        if (resourceName != null)
-        {
-            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-            using (StreamReader reader = new StreamReader(stream))
-            {
-                return await reader.ReadToEndAsync();
-            }
-        }
-
-        throw new FileNotFoundException($"Resource '{fileName}' not found.");
-    }
-
-    static async Task<FileList> LoadFilesFromJsonAsync(string filePath)
-    {
-        using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-        {
-            return await JsonSerializer.DeserializeAsync<FileList>(fs);
-        }
-    }
 
     static async Task DownloadFileWithProgressAsync(string url, string filePath)
     {

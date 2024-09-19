@@ -8,13 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="files.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="files.json">
+    <None Update="files.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
+    </None>
   </ItemGroup>
 
 </Project>
