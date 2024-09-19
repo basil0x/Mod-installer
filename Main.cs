@@ -2,44 +2,40 @@
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Reflection;
 
 class Program
 {
+    public class FileInfo
+    {
+        public required string Url { get; set; }
+        public required string FileName { get; set; }
+    }
+    public class FileList
+    {
+        public required FileInfo[] Files { get; set; }
+    }
+
     static async Task Main()
     {
-        string[] urls = {
-            "https://www.curseforge.com/api/v1/mods/523860/files/5680361/download",
-            "https://www.curseforge.com/api/v1/mods/567450/files/5314033/download",
-            "https://www.curseforge.com/api/v1/mods/519759/files/5626093/download",
-            "https://www.curseforge.com/api/v1/mods/450659/files/5566900/download",
-            "https://www.curseforge.com/api/v1/mods/494654/files/5481257/download",
-            "https://www.curseforge.com/api/v1/mods/499980/files/5702363/download",
-            "https://www.curseforge.com/api/v1/mods/238222/files/5705580/download",
-            "https://www.curseforge.com/api/v1/mods/908741/files/5681725/download",
-            "https://www.curseforge.com/api/v1/mods/551736/files/5701571/download",
-            "https://www.curseforge.com/api/v1/mods/665658/files/5089991/download",
-            "https://www.curseforge.com/api/v1/mods/509041/files/5254836/download",
-            "https://www.curseforge.com/api/v1/mods/419699/files/5137938/download",
-            "https://www.curseforge.com/api/v1/mods/348521/files/4973441/download",
-            "https://www.curseforge.com/api/v1/mods/581495/files/5299671/download"
-        };
-        string[] names =
-        {
-            "recruits","workers","map_atlases","small_ship","item_banning","moonlight_api","jei","embeddium","embeddium_lightning","canary",
-            "epic_knights","architectury_api","cloth_api","oculus"
-        };
+        string jsonUrl = "https://example.com/files.json";
+        string jsonPath = AppDomain.CurrentDomain.BaseDirectory + "files.json";
+        await DownloadFileWithProgressAsync(jsonUrl, jsonPath);
 
         bool? success = true;
         Console.WriteLine("Unesi putanju do Minecraft root foldera: ");
         string? UserPath = Console.ReadLine();
 
-        for (int i = 0; i < urls.Length; i++)
-        {
-            string url = urls[i];
-            string filePath = $"{UserPath}/mods/{names[i]}.jar";
-            if (Directory.Exists(UserPath + "/mods"))
+        FileList fileList = await LoadFilesFromJsonAsync(jsonPath);
+
+        foreach (var file in fileList.Files) {
+
+            string filePath = Path.Combine(UserPath + "/mods", file.FileName);
+            if (Directory.Exists(UserPath + "/versions"))
             {
-                await DownloadFileWithProgressAsync(url, filePath);
+                if (!Directory.Exists(UserPath + "/mods")) Directory.CreateDirectory(UserPath + "/mods");
+                await DownloadFileWithProgressAsync(file.Url, filePath);
             }
             else
             {
@@ -56,6 +52,31 @@ class Program
         Console.ReadLine();
     }
 
+    static async Task<string> ReadEmbeddedJsonAsync(string fileName)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = assembly.GetManifestResourceNames()
+                                   .FirstOrDefault(name => name.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
+
+        if (resourceName != null)
+        {
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
+
+        throw new FileNotFoundException($"Resource '{fileName}' not found.");
+    }
+
+    static async Task<FileList> LoadFilesFromJsonAsync(string filePath)
+    {
+        using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+        {
+            return await JsonSerializer.DeserializeAsync<FileList>(fs);
+        }
+    }
 
     static async Task DownloadFileWithProgressAsync(string url, string filePath)
     {
