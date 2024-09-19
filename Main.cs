@@ -8,15 +8,15 @@ class Program
 {
     public class FileInfo
     {
-        public string Url { get; set; }
-        public string FileName { get; set; }
+        public string url { get; set; }
+        public string fileName { get; set; }
     }
 
     static async Task Main()
     {
         string jsonUrl = "https://github.com/Vuk-Dr/Mod-installer/raw/master/files.json";
         string jsonPath = AppDomain.CurrentDomain.BaseDirectory + "files.json";
-        await DownloadFileWithProgressAsync(jsonUrl, jsonPath);//OK
+        await DownloadFileWithProgressAsync(jsonUrl, jsonPath);
         
         bool? success = true;
         Console.WriteLine("Unesi putanju do Minecraft root foldera: ");
@@ -27,11 +27,13 @@ class Program
 
         foreach (var file in files) {
 
-            string filePath = Path.Combine(UserPath + "/mods", file.FileName);
+            
+            
             if (Directory.Exists(UserPath + "/versions"))
             {
                 if (!Directory.Exists(UserPath + "/mods")) Directory.CreateDirectory(UserPath + "/mods");
-                await DownloadFileWithProgressAsync(file.Url, filePath + file.FileName);
+                string filePath = UserPath + "/mods/" + file.fileName;
+                await DownloadFileWithProgressAsync(file.url, filePath);
             }
             else
             {
