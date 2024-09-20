@@ -16,37 +16,29 @@ class Program
     {
         string jsonUrl = "https://github.com/Vuk-Dr/Mod-installer/raw/master/files.json";
         string jsonPath = AppDomain.CurrentDomain.BaseDirectory + "files.json";
-        await DownloadFileWithProgressAsync(jsonUrl, jsonPath);
         
-        bool? success = true;
+
         Console.WriteLine("Unesi putanju do Minecraft root foldera: ");
         string? UserPath = Console.ReadLine();
 
+        while (!Directory.Exists(UserPath + "/versions"))
+        {
+            Console.WriteLine("Nepravilna putanja, pokušaj ponovo: ");
+            UserPath = Console.ReadLine();
+        }
+        if (!Directory.Exists(UserPath + "/mods")) Directory.CreateDirectory(UserPath + "/mods");
+
+        await DownloadFileWithProgressAsync(jsonUrl, jsonPath);
         string jsonString = File.ReadAllText(jsonPath);
         List<FileInfo> files = JsonSerializer.Deserialize<List<FileInfo>>(jsonString);
 
-        foreach (var file in files) {
-
-            
-            
-            if (Directory.Exists(UserPath + "/versions"))
-            {
-                if (!Directory.Exists(UserPath + "/mods")) Directory.CreateDirectory(UserPath + "/mods");
-                string filePath = UserPath + "/mods/" + file.fileName;
-                await DownloadFileWithProgressAsync(file.url, filePath);
-            }
-            else
-            {
-                Console.WriteLine("Nepravilna putanja");
-                success = false;
-                break;
-            }
-        }
-
-        if (success == true)
+        foreach (var file in files) 
         {
-            Console.WriteLine("Svi fajlovi uspešno preuzeti.\nSkinuti verziju Minecrafta: Forge 1.20.1");
+            string filePath = UserPath + "/mods/" + file.fileName;
+            await DownloadFileWithProgressAsync(file.url, filePath);
         }
+
+        Console.WriteLine("Svi fajlovi uspešno preuzeti.\nSkinuti verziju Minecrafta: Forge 1.20.1");
         Console.ReadLine();
     }
 
@@ -78,17 +70,15 @@ class Program
 
                     if (totalBytes.HasValue)
                     {
-                        // Display progress as a percentage
                         Console.Write($"\rPreuzimanje {Path.GetFileName(filePath)}: {totalMbRead} od {totalMb} Mb. ({(totalRead * 100.0 / totalBytes.Value):0.00}%)");
                     }
                     else
                     {
-                        // If content length is not known, just display total bytes read
                         Console.Write($"\rPreuzimanje {Path.GetFileName(filePath)}: {totalMbRead} Mb");
                     }
                 }
 
-                Console.WriteLine();  // To move to the next line after download is complete
+                Console.WriteLine();
             }
         }
     }
