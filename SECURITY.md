@@ -1,6 +1,7 @@
 # Security Policy
 
 All mods are to be downloaded from json sources on repos.
+Mods are downloaded from [CurseForge](https://www.curseforge.com/)
 
 ## Supported Versions
 
